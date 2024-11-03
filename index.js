@@ -59,7 +59,7 @@ app.post("/register", async (req, res) => {
   const password = req.body.password;
 
   try {
-    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
+    const checkResult = await db.query("SELECT * FROM users WHERE username = $1", [
       email,
     ]);
 
@@ -72,11 +72,15 @@ app.post("/register", async (req, res) => {
           console.error("Error hashing password:", err);
         } else {
           console.log("Hashed Password:", hash);
-          await db.query(
-            "INSERT INTO users (email, password) VALUES ($1, $2)",
+        const result = await db.query(
+            "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
             [email, hash]
           );
-          res.render("secrets.ejs");
+          const user = result.rows[0];
+          req.login(user, (err) => {
+            console.log(err);
+            res.redirect("/secrets");
+          })
         }
       });
     }
